@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  GoogleAuthProvider, // Tambah ini
+  signInWithPopup,      // Tambah ini
   onAuthStateChanged,
   signOut,
   setPersistence,
@@ -13,12 +13,15 @@ import {
   collection,
   doc,
   addDoc,
+  getDocs, // Tambah ini untuk auto-delete
+  updateDoc, // Tambah ini untuk rename
   deleteDoc,
   onSnapshot,
   query,
   where,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  writeBatch // Tambah ini untuk delete efficient
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import {
   getStorage,
@@ -42,6 +45,7 @@ const firebaseConfig = {
 // Mulakan Firebase
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider(); // Eksport provider Google
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
@@ -50,19 +54,21 @@ await setPersistence(auth, browserLocalPersistence);
 
 // Eksport semua modul yang diperlukan untuk app.js
 export {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  signInWithPopup, // Eksport ini
   onAuthStateChanged,
   signOut,
   collection,
   doc,
   addDoc,
+  getDocs, // Eksport ini
+  updateDoc, // Eksport ini
   deleteDoc,
   onSnapshot,
   query,
   where,
   orderBy,
   serverTimestamp,
+  writeBatch, // Eksport ini
   ref,
   uploadBytesResumable,
   getDownloadURL,
