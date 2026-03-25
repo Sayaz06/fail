@@ -1,55 +1,37 @@
 :root {
-  --bg: #020617;           /* Latar belakang utama gelap */
-  --text: #e5e7eb;         /* Teks utama (kelabu cerah) */
-  --subtext: #9ca3af;      /* Teks sekunder/kecil */
-  --border: #1f2937;       /* Sempadan kotak */
-  --border-2: #374151;     /* Sempadan butang/hover */
-  --card-bg: #0b1220;      /* Latar kotak fail/folder */
-  --indigo: #6366f1;       /* Warna kecerunan mula */
-  --violet: #8b5cf6;       /* Warna kecerunan akhir */
-  --folder: #fcd34d;       /* Warna ikon folder */
-  --file: #93c5fd;         /* Warna ikon fail */
+  --bg: #020617;           
+  --text: #e5e7eb;         
+  --subtext: #9ca3af;      
+  --border: #1f2937;       
+  --border-2: #374151;     
+  --card-bg: #0b1220;      
+  --indigo: #6366f1;       
+  --violet: #8b5cf6;       
+  --folder: #fcd34d;       
+  --file: #93c5fd;         
 }
 
-* { 
-  box-sizing: border-box; 
-  margin: 0; 
-  padding: 0; 
-}
-
-html, body { 
-  height: 100%; 
-}
-
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
+  background: var(--bg); color: var(--text); line-height: 1.5;
 }
 
-/* Utiliti */
 .hidden { display: none !important; }
 .page { display: block; min-height: 100vh; }
 
-/* Halaman Log Masuk (Google Auth) */
 .container {
-  max-width: 400px;
-  margin: 15vh auto;
-  padding: 32px 24px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: rgba(2, 6, 23, 0.6);
-  backdrop-filter: blur(10px);
-  text-align: center;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  max-width: 400px; margin: 15vh auto; padding: 32px 24px;
+  border: 1px solid var(--border); border-radius: 16px;
+  background: rgba(2, 6, 23, 0.6); backdrop-filter: blur(10px);
+  text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
 .app-title { margin-bottom: 8px; font-size: 28px; font-weight: 700; background: linear-gradient(90deg, var(--indigo), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .subtext { margin-bottom: 24px; color: var(--subtext); font-size: 0.95rem; }
-.status-msg { font-size: 0.85rem; color: #ef4444; } /* Merah untuk ralat */
+.status-msg { font-size: 0.85rem; color: #ef4444; }
 
-/* Input Umum */
 .input {
   width: 100%; padding: 12px 16px; border-radius: 10px;
   border: 1px solid var(--border); background: var(--card-bg); 
@@ -58,7 +40,6 @@ body {
 .input:focus { border-color: var(--indigo); }
 .input::placeholder { color: var(--subtext); }
 
-/* Butang Umum */
 .btn-primary {
   appearance: none; border: none; cursor: pointer; font-weight: 600;
   padding: 12px 16px; border-radius: 10px; color: white;
@@ -79,7 +60,6 @@ body {
 .btn-ghost:active { transform: translateY(2px); }
 .btn-ghost.small { padding: 6px 12px; font-size: 0.85rem; }
 
-/* Halaman Utama (Home) */
 .home-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 20px 24px; border-bottom: 1px solid var(--border);
@@ -89,36 +69,30 @@ body {
 .brand { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .home-main { padding: 24px; max-width: 1200px; margin: 0 auto; }
 
-/* Toolbar Navigasi */
 .toolbar {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
 }
 .toolbar .input { max-width: 300px; }
-.upload-group { display: flex; gap: 12px; }
+.upload-group { display: flex; gap: 12px; flex-wrap: wrap; }
 
-/* Bar Kemajuan & Modal Padam */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: grid; place-items: center; z-index: 1000; }
 .progress {
   position: relative; height: 12px; border-radius: 8px;
   background: var(--card-bg); border: 1px solid var(--border);
-  margin-bottom: 24px; display: flex; align-items: center;
-  overflow: hidden;
+  margin-bottom: 24px; display: flex; align-items: center; overflow: hidden;
 }
 .progress-bar {
   height: 100%; width: 0%; border-radius: 8px;
-  background: linear-gradient(90deg, var(--indigo), var(--violet));
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, var(--indigo), var(--violet)); transition: width 0.3s ease;
 }
 .progress-label {
   position: absolute; width: 100%; text-align: center;
   font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 
-/* Grid Galeri Fail/Folder */
 .gallery {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px;
 }
 
 .item-card {
@@ -126,7 +100,7 @@ body {
   background: var(--card-bg); display: flex; flex-direction: column; 
   align-items: center; justify-content: center; text-align: center;
   cursor: pointer; transition: transform 0.2s, border-color 0.2s;
-  min-height: 120px; position: relative; /* Penting untuk kedudukan toolbar di bucu */
+  min-height: 120px; position: relative;
 }
 .item-card:hover { transform: translateY(-4px); border-color: var(--border-2); }
 
@@ -134,59 +108,28 @@ body {
 .item-name { font-size: 14px; font-weight: 500; word-break: break-all; width: 100%; }
 .item-meta { font-size: 11px; color: var(--subtext); margin-top: 4px; }
 
-/* --- BARU: Toolbar Tindakan di bucu kad (Tukar Nama & Padam) --- */
+/* --- TOOLBAR TINDAKAN (BUCU KAD) --- */
 .card-actions-toolbar {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 6px; /* Jarak antara butang supaya tidak bertindih */
-  opacity: 0; /* Sorok secara lalai */
-  transition: opacity 0.2s;
-  z-index: 5;
+  position: absolute; top: 8px; right: 8px;
+  display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; z-index: 5;
 }
+.item-card:hover .card-actions-toolbar { opacity: 1; }
 
-/* Tunjukkan toolbar bila kad di-hover */
-.item-card:hover .card-actions-toolbar {
-  opacity: 1;
-}
-
-/* Gaya Generik Butang Tindakan dalam Kad */
 .btn-card-action {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-2);
-  border-radius: 8px;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  transition: background 0.2s, border-color 0.2s;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-2);
+  border-radius: 8px; width: 28px; height: 28px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: background 0.2s, border-color 0.2s;
 }
+.btn-card-action.move { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.btn-card-action.move:hover { background: #f59e0b; color: white; }
 
-/* Gaya khusus untuk butang Padam (Silang) - Merah */
-.btn-card-action.delete {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-}
-.btn-card-action.delete:hover {
-  background: #ef4444;
-  color: white;
-}
+.btn-card-action.rename { color: var(--indigo); background: rgba(99, 102, 241, 0.1); }
+.btn-card-action.rename:hover { background: var(--indigo); color: white; }
 
-/* Gaya khusus untuk butang Rename (Pensel) - Indigo */
-.btn-card-action.rename {
-  color: var(--indigo);
-  background: rgba(99, 102, 241, 0.1);
-}
-.btn-card-action.rename:hover {
-  background: var(--indigo);
-  color: white;
-}
+.btn-card-action.delete { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+.btn-card-action.delete:hover { background: #ef4444; color: white; }
 
-/* Responsif untuk skrin telefon */
 @media (max-width: 600px) {
   .toolbar { flex-direction: column; align-items: stretch; }
   .toolbar .input { max-width: 100%; }
