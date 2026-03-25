@@ -1,0 +1,152 @@
+:root {
+  --bg: #020617;           /* Latar belakang utama gelap */
+  --text: #e5e7eb;         /* Teks utama (kelabu cerah) */
+  --subtext: #9ca3af;      /* Teks sekunder/kecil */
+  --border: #1f2937;       /* Sempadan kotak */
+  --border-2: #374151;     /* Sempadan butang/hover */
+  --card-bg: #0b1220;      /* Latar kotak fail/folder */
+  --indigo: #6366f1;       /* Warna kecerunan mula */
+  --violet: #8b5cf6;       /* Warna kecerunan akhir */
+  --folder: #fcd34d;       /* Warna ikon folder */
+  --file: #93c5fd;         /* Warna ikon fail */
+}
+
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+html, body { 
+  height: 100%; 
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Utiliti */
+.hidden { display: none !important; }
+.page { display: block; min-height: 100vh; }
+
+/* Halaman Log Masuk */
+.container {
+  max-width: 400px;
+  margin: 15vh auto;
+  padding: 32px 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.6);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.app-title { margin-bottom: 8px; font-size: 28px; font-weight: 700; background: linear-gradient(90deg, var(--indigo), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtext { margin-bottom: 24px; color: var(--subtext); font-size: 0.95rem; }
+.status-msg { font-size: 0.85rem; color: #ef4444; } /* Merah untuk ralat */
+
+/* Input & Butang */
+.input {
+  width: 100%; padding: 12px 16px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--card-bg); 
+  color: var(--text); outline: none; transition: border 0.2s;
+}
+.input:focus { border-color: var(--indigo); }
+.input::placeholder { color: var(--subtext); }
+
+.btn-primary {
+  appearance: none; border: none; cursor: pointer; font-weight: 600;
+  padding: 12px 16px; border-radius: 10px; color: white;
+  background: linear-gradient(90deg, var(--indigo), var(--violet));
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+.btn-primary:active { transform: translateY(2px); }
+.btn-primary:hover { box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5); }
+
+.btn-ghost {
+  appearance: none; border: 1px solid var(--border-2); font-weight: 500;
+  background: transparent; color: var(--text);
+  padding: 10px 16px; border-radius: 10px; cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.05); }
+.btn-ghost:active { transform: translateY(2px); }
+.btn-ghost.small { padding: 6px 12px; font-size: 0.85rem; }
+
+/* Halaman Utama (Home) */
+.home-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(10px);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.home-main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+/* Toolbar Navigasi */
+.toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; flex-wrap: wrap; gap: 16px;
+}
+.toolbar .input { max-width: 300px; }
+.upload-group { display: flex; gap: 12px; }
+
+/* Bar Kemajuan */
+.progress {
+  position: relative; height: 12px; border-radius: 8px;
+  background: var(--card-bg); border: 1px solid var(--border);
+  margin-bottom: 24px; display: flex; align-items: center;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%; width: 0%; border-radius: 8px;
+  background: linear-gradient(90deg, var(--indigo), var(--violet));
+  transition: width 0.3s ease;
+}
+.progress-label {
+  position: absolute; width: 100%; text-align: center;
+  font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Grid Galeri Fail/Folder */
+.gallery {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.item-card {
+  border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+  background: var(--card-bg); display: flex; flex-direction: column; 
+  align-items: center; justify-content: center; text-align: center;
+  cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+  min-height: 120px; position: relative;
+}
+.item-card:hover { transform: translateY(-4px); border-color: var(--border-2); }
+
+.item-icon { font-size: 40px; margin-bottom: 12px; }
+.item-name { font-size: 14px; font-weight: 500; word-break: break-all; width: 100%; }
+.item-meta { font-size: 11px; color: var(--subtext); margin-top: 4px; }
+
+/* Butang Padam pada Item */
+.btn-delete {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(239, 68, 68, 0.1); color: #ef4444;
+  border: none; border-radius: 6px; width: 24px; height: 24px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s; font-weight: bold;
+}
+.item-card:hover .btn-delete { opacity: 1; }
+.btn-delete:hover { background: #ef4444; color: white; }
+
+/* Responsif untuk skrin telefon */
+@media (max-width: 600px) {
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar .input { max-width: 100%; }
+  .upload-group { justify-content: space-between; }
+  .gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
