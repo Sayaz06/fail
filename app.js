@@ -38,9 +38,15 @@ const btnBack = document.getElementById('btn-back');
 const currentFolderName = document.getElementById('current-folder-name');
 const btnNewFolder = document.getElementById('btn-new-folder');
 const btnUpload = document.getElementById('btn-upload');
-const btnPaste = document.getElementById('btn-paste'); // DOM Baru
+const btnPaste = document.getElementById('btn-paste'); 
 const fileInput = document.getElementById('file-input');
 const searchInput = document.getElementById('search');
+
+// Elemen Multi-Select
+const msToolbar = document.getElementById('multi-select-toolbar');
+const msCount = document.getElementById('select-count');
+const btnCutSelected = document.getElementById('btn-cut-selected');
+const btnCancelSelect = document.getElementById('btn-cancel-select');
 
 const uploadProgress = document.getElementById('upload-progress');
 const uploadBar = document.getElementById('upload-bar');
@@ -54,7 +60,10 @@ let currentUser = null;
 let folderHistory = [{ id: 'root', name: 'Utama (Root)' }];
 let unsubscribe = null;
 let currentItems = [];
-let itemToMove = null; // State Baru untuk Cut & Paste
+
+// State Cut, Paste & Multi-Select
+let itemsToMove = []; 
+let selectedItemIds = new Set();
 
 function getCurrentFolder() {
   return folderHistory[folderHistory.length - 1];
@@ -69,7 +78,7 @@ btnLoginGoogle.addEventListener('click', async () => {
     btnLoginGoogle.disabled = true;
     await signInWithPopup(auth, googleProvider);
   } catch (err) {
-    authMsg.textContent = "Gagal log masuk: Domain tidak dibenarkan atau tetingkap ditutup.";
+    authMsg.textContent = "Gagal log masuk. Pastikan domain dibenarkan.";
     console.error(err);
     btnLoginGoogle.disabled = false;
   }
@@ -121,6 +130,9 @@ function loadItems() {
     snapshot.forEach(doc => {
       currentItems.push({ id: doc.id, ...doc.data() });
     });
+    // Bersihkan pilihan jika item hilang/dipadam
+    selectedItemIds = new Set([...selectedItemIds].filter(id => currentItems.some(i => i.id === id)));
+    updateMultiSelectUI();
     renderItems(currentItems);
   });
 }
@@ -136,24 +148,73 @@ function renderItems(itemsToRender) {
   itemsToRender.forEach((data) => {
     const card = document.createElement('div');
     card.className = 'item-card';
+    if (selectedItemIds.has(data.id)) card.classList.add('selected');
 
+    // KOTAK SEMAK (CHECKBOX)
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'item-checkbox';
+    checkbox.checked = selectedItemIds.has(data.id);
+    checkbox.onclick = (e) => {
+      e.stopPropagation(); // Halang folder terbuka bila tick
+      if (checkbox.checked) {
+        selectedItemIds.add(data.id);
+        card.classList.add('selected');
+      } else {
+        selectedItemIds.delete(data.id);
+        card.classList.remove('selected');
+      }
+      updateMultiSelectUI();
+    };
+    card.appendChild(checkbox);
+
+    // TOOLBAR TINDAKAN
     const cardToolbar = document.createElement('div');
     cardToolbar.className = 'card-actions-toolbar';
 
-    // Butang Cut (Pindah)
+    // 1. Butang Kongsi (Hanya Fail)
+    if (data.type === 'file') {
+      const btnShare = document.createElement('button');
+      btnShare.className = 'btn-card-action share';
+      btnShare.innerHTML = '🔗';
+      btnShare.title = 'Kongsi Pautan (Share)';
+      btnShare.onclick = async (e) => {
+        e.stopPropagation();
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: data.name,
+              text: `Lihat fail ini: ${data.name}`,
+              url: data.url
+            });
+          } catch (err) { console.log('Batal share'); }
+        } else {
+          navigator.clipboard.writeText(data.url);
+          alert('Pautan disalin! Boleh paste di WhatsApp/Telegram.');
+        }
+      };
+      cardToolbar.appendChild(btnShare);
+    }
+
+    // 2. Butang Cut (Individu)
     const btnMove = document.createElement('button');
     btnMove.className = 'btn-card-action move';
     btnMove.innerHTML = '✂️';
-    btnMove.title = 'Pindah Item (Cut)';
+    btnMove.title = 'Pindah (Cut)';
     btnMove.onclick = (e) => {
       e.stopPropagation();
-      itemToMove = data;
+      itemsToMove = [data]; // Hanya cut item ini
+      selectedItemIds.clear();
+      updateMultiSelectUI();
+      renderItems(currentItems); // Reset UI checkbox
+      
       btnPaste.classList.remove('hidden');
       btnPaste.textContent = `📋 Tampal "${data.name}"`;
-      alert(`Berjaya dipotong! Masuk ke mana-mana folder dan klik butang Tampal di atas.`);
+      alert(`Berjaya dipotong! Masuk ke destinasi dan klik butang Tampal.`);
     };
+    cardToolbar.appendChild(btnMove);
 
-    // Butang Rename
+    // 3. Butang Rename
     const btnRename = document.createElement('button');
     btnRename.className = 'btn-card-action rename';
     btnRename.innerHTML = '✏️';
@@ -162,8 +223,9 @@ function renderItems(itemsToRender) {
       e.stopPropagation();
       renameItem(data.id, data);
     };
+    cardToolbar.appendChild(btnRename);
 
-    // Butang Delete
+    // 4. Butang Delete
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn-card-action delete';
     btnDelete.innerHTML = '✕';
@@ -172,9 +234,11 @@ function renderItems(itemsToRender) {
       e.stopPropagation();
       deleteItem(data.id, data);
     };
+    cardToolbar.appendChild(btnDelete);
 
+    // ISI KAD KANDUNGAN
     if (data.type === 'folder') {
-      card.innerHTML = `
+      card.innerHTML += `
         <div class="item-icon" style="color: var(--folder);">📁</div>
         <div class="item-name">${escapeHtml(data.name)}</div>
         <div class="item-meta">Folder</div>
@@ -191,7 +255,7 @@ function renderItems(itemsToRender) {
       if (data.mimeType && data.mimeType.startsWith('image/')) icon = '🖼️';
       if (data.mimeType && data.mimeType.startsWith('audio/')) icon = '🎵';
 
-      card.innerHTML = `
+      card.innerHTML += `
         <div class="item-icon" style="color: var(--file);">${icon}</div>
         <div class="item-name">${escapeHtml(data.name)}</div>
         <div class="item-meta">${data.ext.toUpperCase()} • ${sizeMB} MB</div>
@@ -199,10 +263,6 @@ function renderItems(itemsToRender) {
       card.onclick = () => window.open(data.url, '_blank');
     }
 
-    // Susun butang: Cut -> Rename -> Delete
-    cardToolbar.appendChild(btnMove);
-    cardToolbar.appendChild(btnRename); 
-    cardToolbar.appendChild(btnDelete); 
     card.appendChild(cardToolbar);      
     itemList.appendChild(card);
   });
@@ -219,7 +279,6 @@ btnBack.onclick = () => {
 btnNewFolder.onclick = async () => {
   const folderName = prompt("Masukkan nama folder baru:");
   if (!folderName || !folderName.trim()) return;
-  
   const currentFolder = getCurrentFolder();
   await addDoc(collection(db, `users/${currentUser.uid}/drive_items`), {
     name: folderName.trim(),
@@ -253,23 +312,13 @@ fileInput.onchange = async (e) => {
           uploadBar.style.width = pct + '%';
           uploadLabel.textContent = `Muat naik (${i + 1}/${files.length}): ${pct}%`;
         },
-        (error) => {
-          alert(`Gagal memuat naik ${file.name}`);
-          console.error(error);
-          resolve(); 
-        },
+        (error) => { resolve(); },
         async () => {
           const url = await getDownloadURL(storageRef);
           await addDoc(collection(db, `users/${currentUser.uid}/drive_items`), {
-            name: file.name,
-            type: 'file',
-            ext: fileExt,
-            mimeType: file.type,
-            size: file.size,
-            storagePath: storageRef.fullPath,
-            parentId: currentFolder.id,
-            url: url,
-            createdAt: serverTimestamp()
+            name: file.name, type: 'file', ext: fileExt, mimeType: file.type,
+            size: file.size, storagePath: storageRef.fullPath,
+            parentId: currentFolder.id, url: url, createdAt: serverTimestamp()
           });
           resolve();
         }
@@ -280,144 +329,123 @@ fileInput.onchange = async (e) => {
   uploadLabel.textContent = "Selesai!";
   setTimeout(() => {
     uploadProgress.classList.add('hidden');
-    uploadBar.style.width = '0%';
-    uploadLabel.textContent = 'Sedia...';
+    uploadBar.style.width = '0%'; uploadLabel.textContent = 'Sedia...';
   }, 2000);
-
   fileInput.value = '';
 };
 
+// ==========================================
+// FUNGSI MULTI-SELECT & CUT/PASTE PUKAL
+// ==========================================
+function updateMultiSelectUI() {
+  const count = selectedItemIds.size;
+  if (count > 0) {
+    msToolbar.classList.remove('hidden');
+    msCount.textContent = `${count} item dipilih`;
+  } else {
+    msToolbar.classList.add('hidden');
+  }
+}
+
+btnCancelSelect.onclick = () => {
+  selectedItemIds.clear();
+  updateMultiSelectUI();
+  renderItems(currentItems);
+};
+
+// Butang Cut Pukal di Menu Bawah
+btnCutSelected.onclick = () => {
+  itemsToMove = currentItems.filter(i => selectedItemIds.has(i.id));
+  selectedItemIds.clear();
+  updateMultiSelectUI();
+  renderItems(currentItems);
+  
+  btnPaste.classList.remove('hidden');
+  btnPaste.textContent = `📋 Tampal (${itemsToMove.length} Item)`;
+  alert(`Berjaya memotong ${itemsToMove.length} item! Masuk destinasi dan Tampal.`);
+};
+
+// Butang Tampal Logik Pukal (Batch Paste)
+btnPaste.addEventListener('click', async () => {
+  if (itemsToMove.length === 0) return;
+  const currentFolder = getCurrentFolder();
+
+  // Tapis fail yang tak boleh dipindah (Contoh: Pindah folder ke dalam dirinya sendiri)
+  const validItems = itemsToMove.filter(item => 
+    item.id !== currentFolder.id && item.parentId !== currentFolder.id
+  );
+
+  if (validItems.length === 0) {
+    alert("Item tidak sah atau sudah berada di dalam folder ini.");
+    itemsToMove = [];
+    btnPaste.classList.add('hidden');
+    return;
+  }
+
+  try {
+    const batch = writeBatch(db);
+    validItems.forEach(item => {
+      const docRef = doc(db, `users/${currentUser.uid}/drive_items`, item.id);
+      batch.update(docRef, { parentId: currentFolder.id });
+    });
+    await batch.commit(); // Jalankan kemas kini pukal
+    console.log(`Berjaya dipindah.`);
+  } catch (err) {
+    alert("Gagal memindahkan fail.");
+  } finally {
+    itemsToMove = [];
+    btnPaste.classList.add('hidden');
+  }
+});
+
+// ==========================================
+// FUNGSI LAIN (Delete, Rename, Search)
+// ==========================================
 async function deleteItem(docId, data) {
   const isFolder = data.type === 'folder';
-  const confirmMsg = isFolder 
-    ? `AWAS: Anda pasti mahu padam folder "${data.name}"?\nSistem akan memadam semua sub-folder dan fail di dalamnya (Firestore & Storage) secara automatik.` 
-    : `Padam fail "${data.name}"?`;
-
-  if (!confirm(confirmMsg)) return;
+  const msg = isFolder ? `AWAS: Anda pasti mahu padam folder "${data.name}" dan isinya?` : `Padam fail "${data.name}"?`;
+  if (!confirm(msg)) return;
 
   try {
     deleteOverlay.classList.remove('hidden'); 
-
     if (!isFolder) {
-      if (data.storagePath) {
-        await deleteObject(ref(storage, data.storagePath));
-      }
+      if (data.storagePath) await deleteObject(ref(storage, data.storagePath));
       await deleteDoc(doc(db, `users/${currentUser.uid}/drive_items`, docId));
     } else {
       await deleteFolderRecursive(docId, currentUser.uid);
       await deleteDoc(doc(db, `users/${currentUser.uid}/drive_items`, docId)); 
     }
-
-  } catch (err) {
-    console.error("Ralat memadam item:", err);
-    alert("Gagal memadam item. Sila semak konsol.");
-  } finally {
-    deleteOverlay.classList.add('hidden'); 
-  }
+  } catch (err) {} finally { deleteOverlay.classList.add('hidden'); }
 }
 
 async function deleteFolderRecursive(itemId, userId) {
-  const itemsRef = collection(db, `users/${userId}/drive_items`);
-  const q = query(itemsRef, where("parentId", "==", itemId));
+  const q = query(collection(db, `users/${userId}/drive_items`), where("parentId", "==", itemId));
   const snapshot = await getDocs(q);
-
   if (snapshot.empty) return;
-
   const batch = writeBatch(db);
-
   for (let docSnap of snapshot.docs) {
     const childData = docSnap.data();
-    const childId = docSnap.id;
-
-    if (childData.type === 'file') {
-      if (childData.storagePath) {
-        try {
-          await deleteObject(ref(storage, childData.storagePath));
-        } catch (e) {
-          console.warn(`Gagal padam fail fizikal: ${childData.storagePath}`);
-        }
-      }
-      batch.delete(docSnap.ref);
-
+    if (childData.type === 'file' && childData.storagePath) {
+      try { await deleteObject(ref(storage, childData.storagePath)); } catch (e) {}
     } else if (childData.type === 'folder') {
-      await deleteFolderRecursive(childId, userId); 
-      batch.delete(docSnap.ref);
+      await deleteFolderRecursive(docSnap.id, userId); 
     }
+    batch.delete(docSnap.ref);
   }
-
   await batch.commit();
 }
 
 async function renameItem(docId, data) {
-  const currentName = data.name;
-  const newName = prompt(`Masukkan nama baru untuk "${currentName}":`, currentName);
-  
-  if (!newName || !newName.trim() || newName.trim() === currentName) {
-    return;
-  }
-
+  const newName = prompt(`Nama baru untuk "${data.name}":`, data.name);
+  if (!newName || !newName.trim() || newName.trim() === data.name) return;
   try {
-    const newNameTrimmed = newName.trim();
-    const docRef = doc(db, `users/${currentUser.uid}/drive_items`, docId);
-    await updateDoc(docRef, {
-      name: newNameTrimmed
-    });
-  } catch (err) {
-    console.error("Ralat tukar nama:", err);
-    alert("Gagal menukar nama.");
-  }
+    await updateDoc(doc(db, `users/${currentUser.uid}/drive_items`, docId), { name: newName.trim() });
+  } catch (err) { alert("Gagal menukar nama."); }
 }
-
-// ==========================================
-// FUNGSI ALIH FAIL (CUT & PASTE)
-// ==========================================
-btnPaste.addEventListener('click', async () => {
-  if (!itemToMove) return;
-  
-  const currentFolder = getCurrentFolder();
-
-  // Halang masuk ke folder sendiri
-  if (itemToMove.id === currentFolder.id) {
-    alert("Ralat: Tidak boleh pindahkan folder ke dalam dirinya sendiri.");
-    return;
-  }
-
-  // Halang jika fail sudah ada di destinasi
-  if (itemToMove.parentId === currentFolder.id) {
-    alert("Item sudah berada di dalam folder ini.");
-    itemToMove = null;
-    btnPaste.classList.add('hidden');
-    return;
-  }
-
-  try {
-    const docRef = doc(db, `users/${currentUser.uid}/drive_items`, itemToMove.id);
-    await updateDoc(docRef, {
-      parentId: currentFolder.id
-    });
-    
-    console.log(`Berjaya dipindahkan ke: ${currentFolder.name}`);
-  } catch (err) {
-    console.error("Gagal pindah fail:", err);
-    alert("Gagal memindahkan fail.");
-  } finally {
-    itemToMove = null;
-    btnPaste.classList.add('hidden');
-  }
-});
 
 searchInput.addEventListener('input', (e) => {
   const q = e.target.value.toLowerCase().trim();
-  if (!q) {
-    renderItems(currentItems);
-    return;
-  }
-  const filtered = currentItems.filter(item => 
-    item.name.toLowerCase().includes(q)
-  );
-  renderItems(filtered);
+  renderItems(!q ? currentItems : currentItems.filter(item => item.name.toLowerCase().includes(q)));
 });
 
-function escapeHtml(s) { 
-  return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
-}
+function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
