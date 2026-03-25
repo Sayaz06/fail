@@ -137,6 +137,7 @@ function loadItems() {
   });
 }
 
+// --- FUNGSI RENDER DIPERBAIKI ---
 function renderItems(itemsToRender) {
   itemList.innerHTML = '';
   
@@ -150,14 +151,34 @@ function renderItems(itemsToRender) {
     card.className = 'item-card';
     if (selectedItemIds.has(data.id)) card.classList.add('selected');
 
-    // KOTAK SEMAK (CHECKBOX)
+    // 1. TULIS KANDUNGAN HTML KAD DAHULU
+    if (data.type === 'folder') {
+      card.innerHTML = `
+        <div class="item-icon" style="color: var(--folder);">📁</div>
+        <div class="item-name">${escapeHtml(data.name)}</div>
+        <div class="item-meta">Folder</div>
+      `;
+    } else {
+      const sizeMB = (data.size / (1024 * 1024)).toFixed(2);
+      let icon = '📄';
+      if (data.mimeType && data.mimeType.startsWith('video/')) icon = '🎬';
+      if (data.mimeType && data.mimeType.startsWith('image/')) icon = '🖼️';
+      if (data.mimeType && data.mimeType.startsWith('audio/')) icon = '🎵';
+
+      card.innerHTML = `
+        <div class="item-icon" style="color: var(--file);">${icon}</div>
+        <div class="item-name">${escapeHtml(data.name)}</div>
+        <div class="item-meta">${data.ext.toUpperCase()} • ${sizeMB} MB</div>
+      `;
+    }
+
+    // 2. CIPTA KOTAK SEMAK (CHECKBOX)
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'item-checkbox';
     checkbox.checked = selectedItemIds.has(data.id);
-    checkbox.onclick = (e) => {
-      e.stopPropagation(); // Halang folder terbuka bila tick
-      if (checkbox.checked) {
+    checkbox.onchange = (e) => {
+      if (e.target.checked) {
         selectedItemIds.add(data.id);
         card.classList.add('selected');
       } else {
@@ -166,26 +187,22 @@ function renderItems(itemsToRender) {
       }
       updateMultiSelectUI();
     };
-    card.appendChild(checkbox);
 
-    // TOOLBAR TINDAKAN
+    // 3. CIPTA TOOLBAR TINDAKAN
     const cardToolbar = document.createElement('div');
     cardToolbar.className = 'card-actions-toolbar';
 
-    // 1. Butang Kongsi (Hanya Fail)
+    // Butang Kongsi (Hanya Fail)
     if (data.type === 'file') {
       const btnShare = document.createElement('button');
       btnShare.className = 'btn-card-action share';
       btnShare.innerHTML = '🔗';
-      btnShare.title = 'Kongsi Pautan (Share)';
+      btnShare.title = 'Kongsi Pautan';
       btnShare.onclick = async (e) => {
-        e.stopPropagation();
         if (navigator.share) {
           try {
             await navigator.share({
-              title: data.name,
-              text: `Lihat fail ini: ${data.name}`,
-              url: data.url
+              title: data.name, text: `Lihat fail ini: ${data.name}`, url: data.url
             });
           } catch (err) { console.log('Batal share'); }
         } else {
@@ -196,17 +213,16 @@ function renderItems(itemsToRender) {
       cardToolbar.appendChild(btnShare);
     }
 
-    // 2. Butang Cut (Individu)
+    // Butang Cut (Individu)
     const btnMove = document.createElement('button');
     btnMove.className = 'btn-card-action move';
     btnMove.innerHTML = '✂️';
     btnMove.title = 'Pindah (Cut)';
     btnMove.onclick = (e) => {
-      e.stopPropagation();
-      itemsToMove = [data]; // Hanya cut item ini
+      itemsToMove = [data]; 
       selectedItemIds.clear();
       updateMultiSelectUI();
-      renderItems(currentItems); // Reset UI checkbox
+      renderItems(currentItems); 
       
       btnPaste.classList.remove('hidden');
       btnPaste.textContent = `📋 Tampal "${data.name}"`;
@@ -214,56 +230,45 @@ function renderItems(itemsToRender) {
     };
     cardToolbar.appendChild(btnMove);
 
-    // 3. Butang Rename
+    // Butang Rename
     const btnRename = document.createElement('button');
     btnRename.className = 'btn-card-action rename';
     btnRename.innerHTML = '✏️';
     btnRename.title = 'Tukar Nama';
     btnRename.onclick = (e) => {
-      e.stopPropagation();
       renameItem(data.id, data);
     };
     cardToolbar.appendChild(btnRename);
 
-    // 4. Butang Delete
+    // Butang Delete
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn-card-action delete';
     btnDelete.innerHTML = '✕';
     btnDelete.title = 'Padam Item';
     btnDelete.onclick = (e) => {
-      e.stopPropagation();
       deleteItem(data.id, data);
     };
     cardToolbar.appendChild(btnDelete);
 
-    // ISI KAD KANDUNGAN
-    if (data.type === 'folder') {
-      card.innerHTML += `
-        <div class="item-icon" style="color: var(--folder);">📁</div>
-        <div class="item-name">${escapeHtml(data.name)}</div>
-        <div class="item-meta">Folder</div>
-      `;
-      card.onclick = () => {
+    // 4. LOGIK KLIK KAD (DIPERBAIKI)
+    card.onclick = (e) => {
+      // ABAIKAN klik jika pengguna klik pada kotak semak atau butang-butang toolbar
+      if (e.target.tagName === 'INPUT' || e.target.closest('.card-actions-toolbar')) {
+        return; 
+      }
+      
+      if (data.type === 'folder') {
         folderHistory.push({ id: data.id, name: data.name });
         searchInput.value = '';
         loadItems();
-      };
-    } else {
-      const sizeMB = (data.size / (1024 * 1024)).toFixed(2);
-      let icon = '📄';
-      if (data.mimeType && data.mimeType.startsWith('video/')) icon = '🎬';
-      if (data.mimeType && data.mimeType.startsWith('image/')) icon = '🖼️';
-      if (data.mimeType && data.mimeType.startsWith('audio/')) icon = '🎵';
+      } else {
+        window.open(data.url, '_blank');
+      }
+    };
 
-      card.innerHTML += `
-        <div class="item-icon" style="color: var(--file);">${icon}</div>
-        <div class="item-name">${escapeHtml(data.name)}</div>
-        <div class="item-meta">${data.ext.toUpperCase()} • ${sizeMB} MB</div>
-      `;
-      card.onclick = () => window.open(data.url, '_blank');
-    }
-
-    card.appendChild(cardToolbar);      
+    // 5. MASUKKAN ELEMEN KE DALAM KAD
+    card.appendChild(checkbox);
+    card.appendChild(cardToolbar);
     itemList.appendChild(card);
   });
 }
@@ -362,7 +367,7 @@ btnCutSelected.onclick = () => {
   
   btnPaste.classList.remove('hidden');
   btnPaste.textContent = `📋 Tampal (${itemsToMove.length} Item)`;
-  alert(`Berjaya memotong ${itemsToMove.length} item! Masuk destinasi dan Tampal.`);
+  alert(`Berjaya memotong ${itemsToMove.length} item! Masuk destinasi dan klik Tampal.`);
 };
 
 // Butang Tampal Logik Pukal (Batch Paste)
@@ -370,7 +375,7 @@ btnPaste.addEventListener('click', async () => {
   if (itemsToMove.length === 0) return;
   const currentFolder = getCurrentFolder();
 
-  // Tapis fail yang tak boleh dipindah (Contoh: Pindah folder ke dalam dirinya sendiri)
+  // Tapis fail yang tak boleh dipindah
   const validItems = itemsToMove.filter(item => 
     item.id !== currentFolder.id && item.parentId !== currentFolder.id
   );
