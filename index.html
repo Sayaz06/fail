@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cloud Drive | Sayaz06</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#020617" />
+  <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="page-login" class="page">
+    <div class="container">
+      <h1 class="app-title">Fail Peribadi</h1>
+      <p class="subtext">Akses terhad. Sila log masuk untuk menguruskan fail anda.</p>
+      
+      <div class="form-group" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+        <input type="email" id="login-email" class="input" placeholder="Alamat E-mel" autocomplete="email" />
+        <input type="password" id="login-password" class="input" placeholder="Kata Laluan" autocomplete="current-password" />
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <button id="btn-login" class="btn-primary" style="flex: 1;">Log Masuk</button>
+        <button id="btn-register" class="btn-ghost" style="flex: 1;">Daftar</button>
+      </div>
+      <span id="auth-msg" class="status-msg hidden" style="margin-top: 12px; display: block;"></span>
+    </div>
+  </div>
+
+  <div id="page-home" class="page hidden">
+    <header class="home-header">
+      <div class="header-left">
+        <h2 class="brand">Fail Saya</h2>
+        <div id="breadcrumb" style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+          <button id="btn-back" class="btn-ghost small hidden" style="padding: 4px 10px; font-size: 0.8rem;">⬅ Kembali</button>
+          <span id="current-folder-name" style="font-size: 0.9rem; color: #9ca3af;">Utama (Root)</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button id="btn-logout" class="btn-ghost">Log Keluar</button>
+      </div>
+    </header>
+
+    <main class="home-main">
+      <div class="toolbar">
+        <input id="search" type="search" class="input" placeholder="Cari fail atau folder..." />
+        <div class="upload-group">
+          <button id="btn-new-folder" class="btn-ghost">+ Folder Baru</button>
+          <button id="btn-upload" class="btn-primary">+ Muat Naik</button>
+          <input id="file-input" type="file" class="hidden" multiple />
+        </div>
+      </div>
+
+      <div id="upload-progress" class="progress hidden" style="margin-bottom: 16px;">
+        <div id="upload-bar" class="progress-bar"></div>
+        <span id="upload-label" class="progress-label">Sedia...</span>
+      </div>
+
+      <section id="item-list" class="gallery">
+        </section>
+    </main>
+  </div>
+
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
