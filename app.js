@@ -27,7 +27,6 @@ import {
 // ==========================================
 // ELEMEN DOM
 // ==========================================
-// Halaman & Auth
 const pageLogin = document.getElementById('page-login');
 const pageHome = document.getElementById('page-home');
 const btnLoginGoogle = document.getElementById('btn-login-google');
@@ -35,15 +34,14 @@ const btnLogout = document.getElementById('btn-logout');
 const authMsg = document.getElementById('auth-msg');
 const deleteOverlay = document.getElementById('delete-overlay');
 
-// Navigasi & Tindakan
 const btnBack = document.getElementById('btn-back');
 const currentFolderName = document.getElementById('current-folder-name');
 const btnNewFolder = document.getElementById('btn-new-folder');
 const btnUpload = document.getElementById('btn-upload');
+const btnPaste = document.getElementById('btn-paste'); // DOM Baru
 const fileInput = document.getElementById('file-input');
 const searchInput = document.getElementById('search');
 
-// Progress Bar & Paparan
 const uploadProgress = document.getElementById('upload-progress');
 const uploadBar = document.getElementById('upload-bar');
 const uploadLabel = document.getElementById('upload-label');
@@ -56,8 +54,8 @@ let currentUser = null;
 let folderHistory = [{ id: 'root', name: 'Utama (Root)' }];
 let unsubscribe = null;
 let currentItems = [];
+let itemToMove = null; // State Baru untuk Cut & Paste
 
-// Dapatkan folder semasa dari hujung array
 function getCurrentFolder() {
   return folderHistory[folderHistory.length - 1];
 }
@@ -81,7 +79,6 @@ btnLogout.addEventListener('click', async () => {
   await signOut(auth);
 });
 
-// Pantau status log masuk
 onAuthStateChanged(auth, (user) => {
   if (user) {
     currentUser = user;
@@ -103,8 +100,6 @@ onAuthStateChanged(auth, (user) => {
 // ==========================================
 // PENGURUSAN FAIL & FOLDER
 // ==========================================
-
-// 1. Muat Item dari Firestore
 function loadItems() {
   if (!currentUser) return;
   const currentFolder = getCurrentFolder();
@@ -130,7 +125,6 @@ function loadItems() {
   });
 }
 
-// 2. Render Paparan Item ke HTML (DIPERBETULKAN SUPAYA TIDAK BERTINDIH)
 function renderItems(itemsToRender) {
   itemList.innerHTML = '';
   
@@ -143,21 +137,33 @@ function renderItems(itemsToRender) {
     const card = document.createElement('div');
     card.className = 'item-card';
 
-    // --- BARU: Guna class baharu untuk Toolbar di bucu ---
     const cardToolbar = document.createElement('div');
-    cardToolbar.className = 'card-actions-toolbar'; // Hapus inline style lama
+    cardToolbar.className = 'card-actions-toolbar';
 
-    // Butang Rename (✏️) - Guna class generik baharu + rename
+    // Butang Cut (Pindah)
+    const btnMove = document.createElement('button');
+    btnMove.className = 'btn-card-action move';
+    btnMove.innerHTML = '✂️';
+    btnMove.title = 'Pindah Item (Cut)';
+    btnMove.onclick = (e) => {
+      e.stopPropagation();
+      itemToMove = data;
+      btnPaste.classList.remove('hidden');
+      btnPaste.textContent = `📋 Tampal "${data.name}"`;
+      alert(`Berjaya dipotong! Masuk ke mana-mana folder dan klik butang Tampal di atas.`);
+    };
+
+    // Butang Rename
     const btnRename = document.createElement('button');
     btnRename.className = 'btn-card-action rename';
     btnRename.innerHTML = '✏️';
     btnRename.title = 'Tukar Nama';
     btnRename.onclick = (e) => {
-      e.stopPropagation(); // Halang folder/fail dari terbuka
+      e.stopPropagation();
       renameItem(data.id, data);
     };
 
-    // Butang Padam (✕) - Guna class generik baharu + delete
+    // Butang Delete
     const btnDelete = document.createElement('button');
     btnDelete.className = 'btn-card-action delete';
     btnDelete.innerHTML = '✕';
@@ -193,15 +199,15 @@ function renderItems(itemsToRender) {
       card.onclick = () => window.open(data.url, '_blank');
     }
 
-    // Masukkan butang secara berurutan dalam Flexbox toolbar
+    // Susun butang: Cut -> Rename -> Delete
+    cardToolbar.appendChild(btnMove);
     cardToolbar.appendChild(btnRename); 
     cardToolbar.appendChild(btnDelete); 
-    card.appendChild(cardToolbar);      // Tambah toolbar ke kad
+    card.appendChild(cardToolbar);      
     itemList.appendChild(card);
   });
 }
 
-// 3. Kembali ke Folder Sebelumnya
 btnBack.onclick = () => {
   if (folderHistory.length > 1) {
     folderHistory.pop(); 
@@ -210,7 +216,6 @@ btnBack.onclick = () => {
   }
 };
 
-// 4. Cipta Folder Baru
 btnNewFolder.onclick = async () => {
   const folderName = prompt("Masukkan nama folder baru:");
   if (!folderName || !folderName.trim()) return;
@@ -224,7 +229,6 @@ btnNewFolder.onclick = async () => {
   });
 };
 
-// 5. Muat Naik Fail (Berbilang Fail bergiliran)
 btnUpload.onclick = () => fileInput.click();
 
 fileInput.onchange = async (e) => {
@@ -280,10 +284,9 @@ fileInput.onchange = async (e) => {
     uploadLabel.textContent = 'Sedia...';
   }, 2000);
 
-  fileInput.value = ''; // Reset input
+  fileInput.value = '';
 };
 
-// 6. Padam Fail / Folder
 async function deleteItem(docId, data) {
   const isFolder = data.type === 'folder';
   const confirmMsg = isFolder 
@@ -313,7 +316,6 @@ async function deleteItem(docId, data) {
   }
 }
 
-// 7. SKRIP RECURSIVE AUTO-DELETE
 async function deleteFolderRecursive(itemId, userId) {
   const itemsRef = collection(db, `users/${userId}/drive_items`);
   const q = query(itemsRef, where("parentId", "==", itemId));
@@ -346,7 +348,6 @@ async function deleteFolderRecursive(itemId, userId) {
   await batch.commit();
 }
 
-// 8. Tukar Nama Fail / Folder
 async function renameItem(docId, data) {
   const currentName = data.name;
   const newName = prompt(`Masukkan nama baru untuk "${currentName}":`, currentName);
@@ -367,7 +368,44 @@ async function renameItem(docId, data) {
   }
 }
 
-// 9. Carian Fail Pintar
+// ==========================================
+// FUNGSI ALIH FAIL (CUT & PASTE)
+// ==========================================
+btnPaste.addEventListener('click', async () => {
+  if (!itemToMove) return;
+  
+  const currentFolder = getCurrentFolder();
+
+  // Halang masuk ke folder sendiri
+  if (itemToMove.id === currentFolder.id) {
+    alert("Ralat: Tidak boleh pindahkan folder ke dalam dirinya sendiri.");
+    return;
+  }
+
+  // Halang jika fail sudah ada di destinasi
+  if (itemToMove.parentId === currentFolder.id) {
+    alert("Item sudah berada di dalam folder ini.");
+    itemToMove = null;
+    btnPaste.classList.add('hidden');
+    return;
+  }
+
+  try {
+    const docRef = doc(db, `users/${currentUser.uid}/drive_items`, itemToMove.id);
+    await updateDoc(docRef, {
+      parentId: currentFolder.id
+    });
+    
+    console.log(`Berjaya dipindahkan ke: ${currentFolder.name}`);
+  } catch (err) {
+    console.error("Gagal pindah fail:", err);
+    alert("Gagal memindahkan fail.");
+  } finally {
+    itemToMove = null;
+    btnPaste.classList.add('hidden');
+  }
+});
+
 searchInput.addEventListener('input', (e) => {
   const q = e.target.value.toLowerCase().trim();
   if (!q) {
@@ -380,7 +418,6 @@ searchInput.addEventListener('input', (e) => {
   renderItems(filtered);
 });
 
-// Utiliti: Keselamatan teks
 function escapeHtml(s) { 
   return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); 
 }
