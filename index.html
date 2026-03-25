@@ -81,5 +81,19 @@
 
   <script type="module" src="./firebase.js"></script>
   <script type="module" src="./app.js"></script>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(registration => {
+            console.log('Service Worker berjaya didaftarkan:', registration.scope);
+          })
+          .catch(error => {
+            console.error('Pendaftaran Service Worker gagal:', error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
